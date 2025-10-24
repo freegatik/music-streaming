@@ -163,22 +163,40 @@ REST API для управления музыкальным стримингов
 
 ### Настройка базы данных
 
-1. Установите PostgreSQL, если еще не установлен
-2. Создайте базу данных:
+1. **Установка PostgreSQL на macOS:**
 
-```sql
-CREATE DATABASE musicdb;
+```bash
+# Установка через Homebrew
+brew install postgresql@15
+
+# Запуск службы PostgreSQL
+brew services start postgresql@15
+
+# Добавление PostgreSQL в PATH (добавьте в ~/.zshrc)
+export PATH="/opt/homebrew/opt/postgresql@15/bin:$PATH"
 ```
 
-3. Настройте параметры подключения в файле `src/main/resources/application.properties`:
+2. **Создание базы данных и пользователя:**
+
+```bash
+# Создание базы данных
+createdb musicdb
+
+# Создание пользователя (если не существует)
+psql -d musicdb -c "CREATE USER freegatik WITH PASSWORD 'freegatik';"
+
+# Предоставление прав
+psql -d musicdb -c "GRANT ALL PRIVILEGES ON DATABASE musicdb TO freegatik;"
+psql -d musicdb -c "ALTER USER freegatik CREATEDB;"
+```
+
+3. **Параметры подключения** (уже настроены в `src/main/resources/application.properties`):
 
 ```properties
 spring.datasource.url=jdbc:postgresql://localhost:5432/musicdb
-spring.datasource.username=postgres
-spring.datasource.password=postgres
+spring.datasource.username=freegatik
+spring.datasource.password=freegatik
 ```
-
-При необходимости измените имя пользователя и пароль на свои.
 
 ### Запуск приложения
 
@@ -194,7 +212,9 @@ spring.datasource.password=postgres
 .\gradlew.bat bootRun
 ```
 
-После запуска приложение будет доступно по адресу: `http://localhost:8080`
+После запуска приложение будет доступно по адресу: `http://localhost:8081`
+
+> **Примечание:** Приложение настроено на порт 8081 для избежания конфликтов с другими сервисами.
 
 ### Сборка проекта
 
@@ -211,7 +231,7 @@ spring.datasource.password=postgres
 ### Создание артиста
 
 ```bash
-curl -X POST http://localhost:8080/api/artists \
+curl -X POST http://localhost:8081/api/artists \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Mac DeMarco",
@@ -223,7 +243,7 @@ curl -X POST http://localhost:8080/api/artists \
 ### Создание альбома
 
 ```bash
-curl -X POST "http://localhost:8080/api/albums?artistId=1" \
+curl -X POST "http://localhost:8081/api/albums?artistId=1" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "2",
@@ -234,7 +254,7 @@ curl -X POST "http://localhost:8080/api/albums?artistId=1" \
 ### Создание трека
 
 ```bash
-curl -X POST "http://localhost:8080/api/tracks?artistId=1&albumId=1" \
+curl -X POST "http://localhost:8081/api/tracks?artistId=1&albumId=1" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Chamber Of Reflection",
@@ -246,7 +266,7 @@ curl -X POST "http://localhost:8080/api/tracks?artistId=1&albumId=1" \
 ### Создание пользователя
 
 ```bash
-curl -X POST http://localhost:8080/api/users \
+curl -X POST http://localhost:8081/api/users \
   -H "Content-Type: application/json" \
   -d '{
     "firstName": "Anton",
@@ -258,7 +278,7 @@ curl -X POST http://localhost:8080/api/users \
 ### Создание плейлиста
 
 ```bash
-curl -X POST "http://localhost:8080/api/playlists?userId=1" \
+curl -X POST "http://localhost:8081/api/playlists?userId=1" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "My favorite songs",
@@ -270,26 +290,26 @@ curl -X POST "http://localhost:8080/api/playlists?userId=1" \
 ### Добавление трека в плейлист
 
 ```bash
-curl -X POST "http://localhost:8080/api/playlists/1/tracks?trackId=1&position=0" \
+curl -X POST "http://localhost:8081/api/playlists/1/tracks?trackId=1&position=0" \
   -H "Content-Type: application/json"
 ```
 
 ### Получение всех артистов
 
 ```bash
-curl http://localhost:8080/api/artists
+curl http://localhost:8081/api/artists
 ```
 
 ### Поиск треков по жанру
 
 ```bash
-curl http://localhost:8080/api/tracks/genre/Инди
+curl http://localhost:8081/api/tracks/genre/Инди
 ```
 
 ### Получение публичных плейлистов
 
 ```bash
-curl http://localhost:8080/api/playlists/public
+curl http://localhost:8081/api/playlists/public
 ```
 
 ## Обработка ошибок
@@ -307,6 +327,12 @@ API возвращает понятные сообщения об ошибках
   }
 }
 ```
+
+## Информация о портах
+
+- **Приложение:** `http://localhost:8081`
+- **PostgreSQL:** `localhost:5432`
+- **База данных:** `musicdb`
 
 ## Будущие улучшения
 
