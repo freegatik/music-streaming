@@ -1,260 +1,87 @@
-# Примеры запросов для macOS Terminal
+# Проверочный сценарий (macOS Terminal)
 
-Этот файл содержит готовые примеры запросов к API музыкального стримингового сервиса.
+Лаконичный набор команд, который запускает сервис и проверяет CRUD + бизнес-операции.
 
-## Предварительные требования
-
-Убедитесь, что:
-1. **PostgreSQL установлен и запущен:**
-   ```bash
-   # Установка через Homebrew
-   brew install postgresql@15
-   
-   # Запуск службы
-   brew services start postgresql@15
-   
-   # Создание базы данных и пользователя
-   createdb musicdb
-   psql -d musicdb -c "CREATE USER user WITH PASSWORD 'user';"
-   psql -d musicdb -c "GRANT ALL PRIVILEGES ON DATABASE musicdb TO user;"
-   ```
-
-2. **Сервер запущен на http://localhost:8081**
-   ```bash
-   ./gradlew bootRun
-   ```
-
-## Примеры запросов
-
-### 1. Создание артиста
-
+## 1. Подготовка окружения
 ```bash
-curl -X POST http://localhost:8081/api/artists \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "$uicide boy$",
-    "bio": "Rap Duet",
-    "country": "USA"
-  }'
+brew services start postgresql@15
+createdb musicdb || true
+psql -d musicdb -c "CREATE USER freegatik WITH PASSWORD 'freegatik';" || true
+psql -d musicdb -c "GRANT ALL PRIVILEGES ON DATABASE musicdb TO freegatik;"
+psql -d musicdb -c "ALTER USER freegatik CREATEDB;"
+
+export DB_URL="jdbc:postgresql://localhost:5432/musicdb"
+export DB_USERNAME="freegatik"
+export DB_PASSWORD="freegatik"
+
+lsof -ti:8081 | xargs kill -9 2>/dev/null || true
+./gradlew bootRun
+```
+Оставьте процесс `bootRun` активным.
+
+## 2. Переменные для запросов
+```bash
+export API_URL="http://localhost:8081/api"
+export JSON_HEADER="Content-Type: application/json"
+```
+> Для удобства чтения ответов установите `jq` (`brew install jq`).
+
+## 3. CRUD-проверка
+```bash
+# Создать артиста
+curl -X POST "$API_URL/artists" \
+  -H "$JSON_HEADER" \
+  -d '{"name":"Mac DeMarco","bio":"Canadian singer-songwriter","country":"Canada"}'
+
+# Получить артистов
+curl "$API_URL/artists"
+
+# Создать трек (artistId=1, albumId=1 уже есть после инициализации)
+curl -X POST "$API_URL/tracks?artistId=1&albumId=1" \
+  -H "$JSON_HEADER" \
+  -d '{"title":"Let Her Go","durationSeconds":210,"genre":"Indie"}'
+
+# Создать плейлист для пользователя 1 и сохранить его id
+PLAYLIST_ID=$(curl -s -X POST "$API_URL/playlists?userId=1" \
+  -H "$JSON_HEADER" \
+  -d '{"name":"Weekend Indie","description":"Relax mode","isPublic":true}' | jq -r '.id')
+
+echo "Playlist id: $PLAYLIST_ID"
+
+# Добавить в плейлист треки, которых там ещё нет
+curl -X POST "$API_URL/playlists/$PLAYLIST_ID/tracks?trackId=3" -H "$JSON_HEADER"
+curl -X POST "$API_URL/playlists/$PLAYLIST_ID/tracks?trackId=4" -H "$JSON_HEADER"
 ```
 
-### 2. Получение всех артистов
-
+## 4. Бизнес-операции
 ```bash
-curl http://localhost:8081/api/artists
+# Переставить трек
+curl -X POST "$API_URL/playlists/$PLAYLIST_ID/tracks/move" \
+  -H "$JSON_HEADER" \
+  -d '{"trackId":4,"newPosition":0}'
+
+# Перемешать плейлист
+curl -X POST "$API_URL/playlists/$PLAYLIST_ID/shuffle"
+
+# Клонировать плейлист пользователю 2
+curl -X POST "$API_URL/playlists/$PLAYLIST_ID/clone" \
+  -H "$JSON_HEADER" \
+  -d '{"targetUserId":2,"name":"Chill Copy","description":"Shared by Alice","makePublic":false}'
+
+# Сгенерировать Daily Mix пользователю 1
+curl -X POST "$API_URL/users/1/mix" \
+  -H "$JSON_HEADER" \
+  -d '{"name":"Daily Mix QA","description":"Smoke test mix","genre":"Indie","limit":5,"makePublic":false}'
+
+# Получить сводку библиотеки
+curl "$API_URL/users/1/summary"
 ```
 
-### 3. Получение артиста по ID
-
+## 5. Проверка результатов
 ```bash
-curl http://localhost:8081/api/artists/1
+curl "$API_URL/playlists/public"
+curl "$API_URL/playlists/$PLAYLIST_ID/tracks" | jq
+curl "$API_URL/albums/artist/1"
 ```
 
-### 4. Поиск артистов по имени
-
-```bash
-curl "http://localhost:8081/api/artists/search?name=$uicide boy$"
-```
-
-### 5. Создание альбома для артиста
-
-```bash
-curl -X POST "http://localhost:8081/api/albums?artistId=1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Eternal Grey",
-    "releaseDate": "2016-09-11",
-    "coverUrl": "https://example.com/cover.jpg"
-  }'
-```
-
-### 6. Создание трека
-
-```bash
-curl -X POST "http://localhost:8081/api/tracks?artistId=1&albumId=1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Eclipse",
-    "durationSeconds": 162,
-    "genre": "Rap",
-    "audioUrl": "https://example.com/audio.mp3"
-  }'
-```
-
-### 7. Создание пользователя
-
-```bash
-curl -X POST http://localhost:8081/api/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "firstName": "Anton",
-    "lastName": "Solovev",
-    "email": "anton.solovev@example.com"
-  }'
-```
-
-### 8. Создание плейлиста
-
-```bash
-curl -X POST "http://localhost:8081/api/playlists?userId=1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "My favorite music",
-    "description": "Best songs ever",
-    "isPublic": true
-  }'
-```
-
-### 9. Добавление трека в плейлист
-
-```bash
-curl -X POST "http://localhost:8081/api/playlists/1/tracks?trackId=1&position=0" \
-  -H "Content-Type: application/json"
-```
-
-### 10. Получение треков плейлиста
-
-```bash
-curl http://localhost:8081/api/playlists/1/tracks
-```
-
-### 11. Обновление артиста
-
-```bash
-curl -X PUT http://localhost:8081/api/artists/1 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "$uicide boy$",
-    "bio": "Rap Duet, the New Orleans-bred duo of cousins",
-    "country": "USA"
-  }'
-```
-
-### 12. Удаление трека из плейлиста
-
-```bash
-curl -X DELETE "http://localhost:8081/api/playlists/1/tracks/0"
-```
-
-### 13. Поиск треков по жанру
-
-```bash
-curl http://localhost:8081/api/tracks/genre/Rap
-```
-
-### 14. Получение публичных плейлистов
-
-```bash
-curl http://localhost:8081/api/playlists/public
-```
-
-### 15. Удаление артиста
-
-```bash
-curl -X DELETE http://localhost:8081/api/artists/1
-```
-
-## Полный сценарий использования
-
-Вот пример полного сценария создания музыкальной библиотеки:
-
-```bash
-# 1. Создаем артиста
-curl -X POST http://localhost:8081/api/artists \
-  -H "Content-Type: application/json" \
-  -d '{"name": "$uicide boy$", "bio": "Rap Duet", "country": "USA"}'
-
-# 2. Создаем альбом
-curl -X POST "http://localhost:8081/api/albums?artistId=1" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Eternal Grey", "releaseDate": "2016-09-11"}'
-
-# 3. Добавляем несколько треков
-curl -X POST "http://localhost:8081/api/tracks?artistId=1&albumId=1" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Chariot of Fire", "durationSeconds": 129, "genre": "Rap"}'
-
-curl -X POST "http://localhost:8081/api/tracks?artistId=1&albumId=1" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "I Want to Believe", "durationSeconds": 142, "genre": "Rap"}'
-
-# 4. Создаем пользователя
-curl -X POST http://localhost:8081/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"firstName": "Anton", "lastName": "Solovev", "email": "anton@example.com"}'
-
-# 5. Создаем плейлист
-curl -X POST "http://localhost:8081/api/playlists?userId=1" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "$uicide boy$", "description": "This is $uicide boy$", "isPublic": true}'
-
-# 6. Добавляем треки в плейлист
-curl -X POST "http://localhost:8081/api/playlists/1/tracks?trackId=1&position=0" \
-  -H "Content-Type: application/json"
-
-curl -X POST "http://localhost:8081/api/playlists/1/tracks?trackId=2&position=1" \
-  -H "Content-Type: application/json"
-
-# 7. Получаем результат
-curl http://localhost:8081/api/playlists/1/tracks
-```
-
-## Обработка ошибок
-
-Примеры запросов с ошибками:
-
-```bash
-# Попытка создать пользователя с некорректным email
-curl -X POST http://localhost:8081/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"firstName": "Петр", "lastName": "Иванов", "email": "invalid-email"}'
-
-# Попытка создать артиста с пустым именем
-curl -X POST http://localhost:8081/api/artists \
-  -H "Content-Type: application/json" \
-  -d '{"name": "", "bio": "Тест"}'
-```
-
-## Переменные для удобства
-
-Вы можете определить переменные в терминале:
-
-```bash
-# Определение базового URL
-BASE_URL="http://localhost:8081/api"
-
-# Использование
-curl -X POST "$BASE_URL/artists" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Test Artist", "bio": "Bio", "country": "Russia"}'
-
-# Сохранение ID из ответа
-ARTIST_ID=$(curl -s -X POST "$BASE_URL/artists" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Test", "bio": "Bio", "country": "RU"}' | jq -r '.id')
-
-echo "Created artist with ID: $ARTIST_ID"
-```
-
-## Быстрое тестирование API
-
-Для быстрой проверки работоспособности API выполните следующие команды:
-
-```bash
-# 1. Проверка доступности сервера
-curl -s http://localhost:8081/api/users
-
-# 2. Создание тестового пользователя
-curl -X POST http://localhost:8081/api/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "firstName": "Test",
-    "lastName": "User", 
-    "email": "test@example.com"
-  }'
-
-# 3. Проверка создания пользователя
-curl -s http://localhost:8081/api/users
-```
-
-Если все работает корректно, вы увидите созданного пользователя в ответе.
+Если какой-либо запрос возвращает 4xx/5xx, проверьте, что сервис запущен, окружение настроено и база данных доступна.
