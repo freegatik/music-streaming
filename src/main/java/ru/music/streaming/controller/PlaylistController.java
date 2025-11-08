@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.music.streaming.dto.PlaylistCloneRequest;
+import ru.music.streaming.dto.PlaylistMoveRequest;
+import ru.music.streaming.dto.PlaylistTrackResponse;
 import ru.music.streaming.model.Playlist;
 import ru.music.streaming.model.PlaylistTrack;
 import ru.music.streaming.service.PlaylistService;
@@ -73,11 +76,37 @@ public class PlaylistController {
     }
     
     @PostMapping("/{playlistId}/tracks")
-    public ResponseEntity<PlaylistTrack> addTrackToPlaylist(@PathVariable Long playlistId,
-                                                            @RequestParam Long trackId,
-                                                            @RequestParam(required = false) Integer position) {
+    public ResponseEntity<PlaylistTrackResponse> addTrackToPlaylist(@PathVariable Long playlistId,
+                                                                   @RequestParam Long trackId,
+                                                                   @RequestParam(required = false) Integer position) {
         PlaylistTrack playlistTrack = playlistService.addTrackToPlaylist(playlistId, trackId, position);
-        return new ResponseEntity<>(playlistTrack, HttpStatus.CREATED);
+        Long trackIdentifier = playlistTrack.getTrack().getId();
+        List<PlaylistTrackResponse> view = playlistService.getPlaylistView(playlistId);
+        PlaylistTrackResponse response = view.stream()
+                .filter(item -> item.getTrackId().equals(trackIdentifier))
+                .findFirst()
+                .orElseGet(() -> view.get(view.size() - 1));
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    
+    @PostMapping("/{playlistId}/tracks/move")
+    public ResponseEntity<List<PlaylistTrackResponse>> moveTrackInPlaylist(@PathVariable Long playlistId,
+                                                                           @Valid @RequestBody PlaylistMoveRequest request) {
+        playlistService.moveTrackWithinPlaylist(playlistId, request.getTrackId(), request.getNewPosition());
+        return ResponseEntity.ok(playlistService.getPlaylistView(playlistId));
+    }
+    
+    @PostMapping("/{playlistId}/shuffle")
+    public ResponseEntity<List<PlaylistTrackResponse>> shufflePlaylist(@PathVariable Long playlistId) {
+        playlistService.shufflePlaylist(playlistId);
+        return ResponseEntity.ok(playlistService.getPlaylistView(playlistId));
+    }
+    
+    @PostMapping("/{playlistId}/clone")
+    public ResponseEntity<Playlist> clonePlaylist(@PathVariable Long playlistId,
+                                                  @Valid @RequestBody PlaylistCloneRequest request) {
+        Playlist clone = playlistService.clonePlaylist(playlistId, request.getTargetUserId(), request.getName(), request.getDescription(), request.getMakePublic());
+        return new ResponseEntity<>(clone, HttpStatus.CREATED);
     }
     
     @DeleteMapping("/{playlistId}/tracks/{position}")
@@ -88,8 +117,8 @@ public class PlaylistController {
     }
     
     @GetMapping("/{playlistId}/tracks")
-    public ResponseEntity<List<PlaylistTrack>> getPlaylistTracks(@PathVariable Long playlistId) {
-        List<PlaylistTrack> tracks = playlistService.getPlaylistTracks(playlistId);
+    public ResponseEntity<List<PlaylistTrackResponse>> getPlaylistTracks(@PathVariable Long playlistId) {
+        List<PlaylistTrackResponse> tracks = playlistService.getPlaylistView(playlistId);
         return ResponseEntity.ok(tracks);
     }
 }

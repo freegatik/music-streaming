@@ -5,7 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.music.streaming.dto.DailyMixRequest;
+import ru.music.streaming.dto.UserLibrarySummaryResponse;
+import ru.music.streaming.model.Playlist;
 import ru.music.streaming.model.User;
+import ru.music.streaming.service.PlaylistService;
 import ru.music.streaming.service.UserService;
 
 import java.util.List;
@@ -15,10 +19,12 @@ import java.util.List;
 public class UserController {
     
     private final UserService userService;
+    private final PlaylistService playlistService;
     
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, PlaylistService playlistService) {
         this.userService = userService;
+        this.playlistService = playlistService;
     }
     
     @PostMapping
@@ -56,5 +62,18 @@ public class UserController {
     public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
         User user = userService.getUserByEmail(email);
         return ResponseEntity.ok(user);
+    }
+    
+    @PostMapping("/{userId}/mix")
+    public ResponseEntity<Playlist> createDailyMix(@PathVariable Long userId,
+                                                   @Valid @RequestBody DailyMixRequest request) {
+        Playlist playlist = playlistService.createDailyMix(userId, request);
+        return new ResponseEntity<>(playlist, HttpStatus.CREATED);
+    }
+    
+    @GetMapping("/{userId}/summary")
+    public ResponseEntity<UserLibrarySummaryResponse> getUserSummary(@PathVariable Long userId) {
+        UserLibrarySummaryResponse summary = userService.getUserLibrarySummary(userId);
+        return ResponseEntity.ok(summary);
     }
 }

@@ -3,7 +3,6 @@ package ru.music.streaming.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ public class Playlist {
     @Column(length = 500)
     private String description;
     
-    @NotNull(message = "Укажите владельца плейлиста")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore

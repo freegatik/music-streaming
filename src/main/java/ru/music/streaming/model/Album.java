@@ -48,7 +48,6 @@ public class Album {
         this.coverUrl = coverUrl;
     }
     
-    // Геттеры и сеттеры
     public Long getId() {
         return id;
     }

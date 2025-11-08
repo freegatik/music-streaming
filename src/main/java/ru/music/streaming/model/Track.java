@@ -52,7 +52,6 @@ public class Track {
         this.genre = genre;
     }
     
-    // Геттеры и сеттеры
     public Long getId() {
         return id;
     }

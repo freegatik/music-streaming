@@ -1,5 +1,7 @@
 package ru.music.streaming.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -8,6 +10,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "artists")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Artist {
     
     @Id
@@ -26,9 +29,11 @@ public class Artist {
     private String country;
     
     @OneToMany(mappedBy = "artist", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Track> tracks = new ArrayList<>();
     
     @OneToMany(mappedBy = "artist", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Album> albums = new ArrayList<>();
     
     public Artist() {
@@ -40,7 +45,6 @@ public class Artist {
         this.country = country;
     }
     
-    // Геттеры и сеттеры
     public Long getId() {
         return id;
     }

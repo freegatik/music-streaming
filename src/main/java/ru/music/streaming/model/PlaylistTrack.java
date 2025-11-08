@@ -39,7 +39,6 @@ public class PlaylistTrack {
         this.position = position;
     }
     
-    // Геттеры и сеттеры
     public Long getId() {
         return id;
     }
