@@ -3,11 +3,14 @@ package ru.music.streaming.config;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import ru.music.streaming.model.*;
-import ru.music.streaming.repository.*;
+import ru.music.streaming.model.Album;
+import ru.music.streaming.model.Artist;
+import ru.music.streaming.model.Track;
+import ru.music.streaming.repository.AlbumRepository;
+import ru.music.streaming.repository.ArtistRepository;
+import ru.music.streaming.repository.TrackRepository;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -15,22 +18,13 @@ public class DataInitializer implements CommandLineRunner {
     private final ArtistRepository artistRepository;
     private final AlbumRepository albumRepository;
     private final TrackRepository trackRepository;
-    private final UserRepository userRepository;
-    private final PlaylistRepository playlistRepository;
-    private final PlaylistTrackRepository playlistTrackRepository;
 
     public DataInitializer(ArtistRepository artistRepository,
                            AlbumRepository albumRepository,
-                           TrackRepository trackRepository,
-                           UserRepository userRepository,
-                           PlaylistRepository playlistRepository,
-                           PlaylistTrackRepository playlistTrackRepository) {
+                           TrackRepository trackRepository) {
         this.artistRepository = artistRepository;
         this.albumRepository = albumRepository;
         this.trackRepository = trackRepository;
-        this.userRepository = userRepository;
-        this.playlistRepository = playlistRepository;
-        this.playlistTrackRepository = playlistTrackRepository;
     }
 
     @Override
@@ -61,18 +55,5 @@ public class DataInitializer implements CommandLineRunner {
         Track eventually = new Track("Eventually", tameImpala, currents, 321, "Psychedelic");
         eventually.setAudioUrl("https://example.com/audio/eventually.mp3");
         eventually = trackRepository.save(eventually);
-
-        User alice = userRepository.save(new User("Alice", "Cooper", "alice@example.com"));
-        User bob = userRepository.save(new User("Bob", "Stone", "bob@example.com"));
-
-        Playlist chillVibes = playlistRepository.save(new Playlist("Chill Vibes", "Relaxed indie tracks", alice, true));
-        Playlist psychEnergy = playlistRepository.save(new Playlist("Psychedelic Energy", "Favourite tracks from Tame Impala", bob, false));
-
-        playlistTrackRepository.saveAll(List.of(
-                new PlaylistTrack(chillVibes, chamber, 0),
-                new PlaylistTrack(chillVibes, passingOut, 1),
-                new PlaylistTrack(psychEnergy, letItHappen, 0),
-                new PlaylistTrack(psychEnergy, eventually, 1)
-        ));
     }
 }

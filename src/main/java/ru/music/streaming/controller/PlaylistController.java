@@ -4,12 +4,14 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 import ru.music.streaming.dto.PlaylistCloneRequest;
 import ru.music.streaming.dto.PlaylistMoveRequest;
 import ru.music.streaming.dto.PlaylistTrackResponse;
 import ru.music.streaming.model.Playlist;
 import ru.music.streaming.model.PlaylistTrack;
+import ru.music.streaming.security.PlaylistOwnershipChecker;
 import ru.music.streaming.service.PlaylistService;
 
 import java.util.List;
@@ -19,16 +21,22 @@ import java.util.List;
 public class PlaylistController {
     
     private final PlaylistService playlistService;
+    private final PlaylistOwnershipChecker ownershipChecker;
     
     @Autowired
-    public PlaylistController(PlaylistService playlistService) {
+    public PlaylistController(PlaylistService playlistService, PlaylistOwnershipChecker ownershipChecker) {
         this.playlistService = playlistService;
+        this.ownershipChecker = ownershipChecker;
     }
     
     @PostMapping
-    public ResponseEntity<Playlist> createPlaylist(@Valid @RequestBody Playlist playlist,
-                                                   @RequestParam Long userId) {
-        Playlist created = playlistService.createPlaylist(playlist, userId);
+    public ResponseEntity<Playlist> createPlaylist(@Valid @RequestBody Playlist playlist) {
+        // Используем текущего аутентифицированного пользователя
+        var currentUser = ownershipChecker.getCurrentUser();
+        if (currentUser == null) {
+            throw new AccessDeniedException("Пользователь не аутентифицирован");
+        }
+        Playlist created = playlistService.createPlaylist(playlist, currentUser.getId());
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
     
@@ -47,12 +55,20 @@ public class PlaylistController {
     @PutMapping("/{id}")
     public ResponseEntity<Playlist> updatePlaylist(@PathVariable Long id,
                                                    @Valid @RequestBody Playlist playlist) {
+        Playlist existing = playlistService.getPlaylistById(id);
+        if (!ownershipChecker.isOwnerOrAdmin(existing)) {
+            throw new AccessDeniedException("У вас нет прав для изменения этого плейлиста");
+        }
         Playlist updated = playlistService.updatePlaylist(id, playlist);
         return ResponseEntity.ok(updated);
     }
     
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePlaylist(@PathVariable Long id) {
+        Playlist existing = playlistService.getPlaylistById(id);
+        if (!ownershipChecker.isOwnerOrAdmin(existing)) {
+            throw new AccessDeniedException("У вас нет прав для удаления этого плейлиста");
+        }
         playlistService.deletePlaylist(id);
         return ResponseEntity.noContent().build();
     }
@@ -79,6 +95,10 @@ public class PlaylistController {
     public ResponseEntity<PlaylistTrackResponse> addTrackToPlaylist(@PathVariable Long playlistId,
                                                                    @RequestParam Long trackId,
                                                                    @RequestParam(required = false) Integer position) {
+        Playlist existing = playlistService.getPlaylistById(playlistId);
+        if (!ownershipChecker.isOwnerOrAdmin(existing)) {
+            throw new AccessDeniedException("У вас нет прав для изменения этого плейлиста");
+        }
         PlaylistTrack playlistTrack = playlistService.addTrackToPlaylist(playlistId, trackId, position);
         Long trackIdentifier = playlistTrack.getTrack().getId();
         List<PlaylistTrackResponse> view = playlistService.getPlaylistView(playlistId);
@@ -92,12 +112,20 @@ public class PlaylistController {
     @PostMapping("/{playlistId}/tracks/move")
     public ResponseEntity<List<PlaylistTrackResponse>> moveTrackInPlaylist(@PathVariable Long playlistId,
                                                                            @Valid @RequestBody PlaylistMoveRequest request) {
+        Playlist existing = playlistService.getPlaylistById(playlistId);
+        if (!ownershipChecker.isOwnerOrAdmin(existing)) {
+            throw new AccessDeniedException("У вас нет прав для изменения этого плейлиста");
+        }
         playlistService.moveTrackWithinPlaylist(playlistId, request.getTrackId(), request.getNewPosition());
         return ResponseEntity.ok(playlistService.getPlaylistView(playlistId));
     }
     
     @PostMapping("/{playlistId}/shuffle")
     public ResponseEntity<List<PlaylistTrackResponse>> shufflePlaylist(@PathVariable Long playlistId) {
+        Playlist existing = playlistService.getPlaylistById(playlistId);
+        if (!ownershipChecker.isOwnerOrAdmin(existing)) {
+            throw new AccessDeniedException("У вас нет прав для изменения этого плейлиста");
+        }
         playlistService.shufflePlaylist(playlistId);
         return ResponseEntity.ok(playlistService.getPlaylistView(playlistId));
     }
@@ -105,13 +133,34 @@ public class PlaylistController {
     @PostMapping("/{playlistId}/clone")
     public ResponseEntity<Playlist> clonePlaylist(@PathVariable Long playlistId,
                                                   @Valid @RequestBody PlaylistCloneRequest request) {
-        Playlist clone = playlistService.clonePlaylist(playlistId, request.getTargetUserId(), request.getName(), request.getDescription(), request.getMakePublic());
+        // Проверяем доступ к исходному плейлисту (должен быть публичным или принадлежать пользователю)
+        Playlist source = playlistService.getPlaylistById(playlistId);
+        var currentUser = ownershipChecker.getCurrentUser();
+        if (currentUser == null) {
+            throw new AccessDeniedException("Пользователь не аутентифицирован");
+        }
+        
+        // Плейлист может быть клонирован, если он публичный или принадлежит пользователю, или пользователь - ADMIN
+        boolean canClone = source.getIsPublic() || 
+                          source.getUser().getId().equals(currentUser.getId()) || 
+                          ownershipChecker.isAdmin();
+        
+        if (!canClone) {
+            throw new AccessDeniedException("У вас нет прав для клонирования этого плейлиста");
+        }
+        
+        // Клонируем для текущего пользователя
+        Playlist clone = playlistService.clonePlaylist(playlistId, currentUser.getId(), request.getName(), request.getDescription(), request.getMakePublic());
         return new ResponseEntity<>(clone, HttpStatus.CREATED);
     }
     
     @DeleteMapping("/{playlistId}/tracks/{position}")
     public ResponseEntity<Void> removeTrackFromPlaylist(@PathVariable Long playlistId,
                                                         @PathVariable Integer position) {
+        Playlist existing = playlistService.getPlaylistById(playlistId);
+        if (!ownershipChecker.isOwnerOrAdmin(existing)) {
+            throw new AccessDeniedException("У вас нет прав для изменения этого плейлиста");
+        }
         playlistService.removeTrackFromPlaylist(playlistId, position);
         return ResponseEntity.noContent().build();
     }

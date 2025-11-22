@@ -1,12 +1,15 @@
 package ru.music.streaming.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.music.streaming.dto.RegistrationRequest;
 import ru.music.streaming.dto.UserLibrarySummaryResponse;
 import ru.music.streaming.model.Artist;
 import ru.music.streaming.model.Playlist;
 import ru.music.streaming.model.PlaylistTrack;
+import ru.music.streaming.model.Role;
 import ru.music.streaming.model.Track;
 import ru.music.streaming.model.User;
 import ru.music.streaming.repository.PlaylistRepository;
@@ -24,14 +27,17 @@ public class UserService {
     private final UserRepository userRepository;
     private final PlaylistRepository playlistRepository;
     private final PlaylistTrackRepository playlistTrackRepository;
+    private final PasswordEncoder passwordEncoder;
     
     @Autowired
     public UserService(UserRepository userRepository,
                        PlaylistRepository playlistRepository,
-                       PlaylistTrackRepository playlistTrackRepository) {
+                       PlaylistTrackRepository playlistTrackRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.playlistRepository = playlistRepository;
         this.playlistTrackRepository = playlistTrackRepository;
+        this.passwordEncoder = passwordEncoder;
     }
     
     @Transactional
@@ -39,6 +45,31 @@ public class UserService {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new RuntimeException("Пользователь с email " + user.getEmail() + " уже существует");
         }
+        return userRepository.save(user);
+    }
+    
+    @Transactional
+    public User registerUser(RegistrationRequest request) {
+        // Проверка уникальности username
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Пользователь с именем " + request.getUsername() + " уже существует");
+        }
+        
+        // Проверка уникальности email
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Пользователь с email " + request.getEmail() + " уже существует");
+        }
+        
+        // Создание нового пользователя с ролью USER по умолчанию
+        User user = new User(
+                request.getFirstName(),
+                request.getLastName(),
+                request.getEmail(),
+                request.getUsername(),
+                passwordEncoder.encode(request.getPassword()),
+                Role.USER
+        );
+        
         return userRepository.save(user);
     }
     

@@ -1,0 +1,895 @@
+{
+	"info": {
+		"_postman_id": "music-streaming-api",
+		"name": "Music Streaming API",
+		"description": "API коллекция для Music Streaming приложения с Spring Security",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "username",
+				"value": "{{username}}",
+				"type": "string"
+			},
+			{
+				"key": "password",
+				"value": "{{password}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"userId\", jsonData.id);",
+									"    pm.collectionVariables.set(\"username\", jsonData.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"Test123!@#\",\n    \"email\": \"testuser@example.com\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "register"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Artists",
+			"item": [
+				{
+					"name": "Get All Artists",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/artists",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "artists"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Artist by ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/artists/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "artists", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Artists",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/artists/search?name=Mac",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "artists", "search"],
+							"query": [
+								{
+									"key": "name",
+									"value": "Mac"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Artists by Country",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/artists/country/Canada",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "artists", "country", "Canada"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Artist (ADMIN)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New Artist\",\n    \"biography\": \"Artist biography\",\n    \"country\": \"USA\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/artists",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "artists"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Artist (ADMIN)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Artist\",\n    \"biography\": \"Updated biography\",\n    \"country\": \"USA\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/artists/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "artists", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Artist (ADMIN)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/artists/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "artists", "1"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Albums",
+			"item": [
+				{
+					"name": "Get All Albums",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/albums",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "albums"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Album by ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/albums/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "albums", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Albums by Artist",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/albums/artist/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "albums", "artist", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Albums",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/albums/search?title=Salad",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "albums", "search"],
+							"query": [
+								{
+									"key": "title",
+									"value": "Salad"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Album (ADMIN)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"New Album\",\n    \"releaseDate\": \"2024-01-01\",\n    \"coverImageUrl\": \"https://example.com/cover.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/albums?artistId=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "albums"],
+							"query": [
+								{
+									"key": "artistId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Album (ADMIN)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Updated Album\",\n    \"releaseDate\": \"2024-01-01\",\n    \"coverImageUrl\": \"https://example.com/cover.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/albums/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "albums", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Album (ADMIN)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/albums/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "albums", "1"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tracks",
+			"item": [
+				{
+					"name": "Get All Tracks",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tracks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracks"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Track by ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tracks/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracks", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tracks by Artist",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tracks/artist/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracks", "artist", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tracks by Album",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tracks/album/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracks", "album", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Tracks",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tracks/search?title=Chamber",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracks", "search"],
+							"query": [
+								{
+									"key": "title",
+									"value": "Chamber"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tracks by Genre",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tracks/genre/Indie",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracks", "genre", "Indie"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Track (ADMIN)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"New Track\",\n    \"durationSeconds\": 240,\n    \"genre\": \"Rock\",\n    \"audioUrl\": \"https://example.com/audio.mp3\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tracks?artistId=1&albumId=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracks"],
+							"query": [
+								{
+									"key": "artistId",
+									"value": "1"
+								},
+								{
+									"key": "albumId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Track (ADMIN)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Updated Track\",\n    \"durationSeconds\": 250,\n    \"genre\": \"Rock\",\n    \"audioUrl\": \"https://example.com/audio.mp3\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tracks/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracks", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Track (ADMIN)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tracks/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracks", "1"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Playlists",
+			"item": [
+				{
+					"name": "Get Public Playlists",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/public",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "public"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Playlists (USER/ADMIN)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Playlist by ID (USER/ADMIN)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "1"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Playlists by User (USER/ADMIN)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/user/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "user", "{{userId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Playlists (USER/ADMIN)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/search?name=Chill",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "search"],
+							"query": [
+								{
+									"key": "name",
+									"value": "Chill"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Playlist (USER/ADMIN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"playlistId\", jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My Playlist\",\n    \"description\": \"My favorite tracks\",\n    \"isPublic\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Playlist (Owner/ADMIN)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Playlist\",\n    \"description\": \"Updated description\",\n    \"isPublic\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "{{playlistId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Playlist (Owner/ADMIN)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "{{playlistId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Playlist Tracks (USER/ADMIN)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}/tracks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "{{playlistId}}", "tracks"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Track to Playlist (Owner/ADMIN)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}/tracks?trackId=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "{{playlistId}}", "tracks"],
+							"query": [
+								{
+									"key": "trackId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Track from Playlist (Owner/ADMIN)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}/tracks/0",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "{{playlistId}}", "tracks", "0"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Move Track in Playlist (Owner/ADMIN)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"trackId\": 1,\n    \"newPosition\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}/tracks/move",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "{{playlistId}}", "tracks", "move"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Shuffle Playlist (Owner/ADMIN)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}/shuffle",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "{{playlistId}}", "shuffle"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clone Playlist (USER/ADMIN)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Cloned Playlist\",\n    \"description\": \"Cloned from original\",\n    \"makePublic\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}/clone",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists", "{{playlistId}}", "clone"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get All Users (ADMIN only)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID (Self/ADMIN)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "{{userId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User (Self/ADMIN)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"Updated\",\n    \"lastName\": \"Name\",\n    \"email\": \"updated@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "{{userId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User (Self/ADMIN)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "{{userId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Summary (Self/ADMIN)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}/summary",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "{{userId}}", "summary"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Daily Mix (Self/ADMIN)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Daily Mix\",\n    \"description\": \"Auto-generated mix\",\n    \"limit\": 10,\n    \"genre\": \"Indie\",\n    \"makePublic\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}/mix",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "{{userId}}", "mix"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8081",
+			"type": "string"
+		},
+		{
+			"key": "username",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "password",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "playlistId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

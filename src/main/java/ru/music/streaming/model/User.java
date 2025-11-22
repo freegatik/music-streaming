@@ -1,8 +1,10 @@
 package ru.music.streaming.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +32,21 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
     
+    @NotBlank(message = "Имя пользователя для входа не может быть пустым")
+    @Size(min = 3, max = 50, message = "Имя пользователя должно быть от 3 до 50 символов")
+    @Column(nullable = false, unique = true)
+    private String username;
+    
+    @NotBlank(message = "Пароль не может быть пустым")
+    @Column(nullable = false)
+    @JsonIgnore
+    private String password;
+    
+    @NotNull(message = "Роль пользователя должна быть указана")
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+    
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Playlist> playlists = new ArrayList<>();
     
@@ -40,6 +57,15 @@ public class User {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+    }
+    
+    public User(String firstName, String lastName, String email, String username, String password, Role role) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.username = username;
+        this.password = password;
+        this.role = role;
     }
     
     // Геттеры и сеттеры
@@ -81,5 +107,29 @@ public class User {
     
     public void setPlaylists(List<Playlist> playlists) {
         this.playlists = playlists;
+    }
+    
+    public String getUsername() {
+        return username;
+    }
+    
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    public String getPassword() {
+        return password;
+    }
+    
+    public void setPassword(String password) {
+        this.password = password;
+    }
+    
+    public Role getRole() {
+        return role;
+    }
+    
+    public void setRole(Role role) {
+        this.role = role;
     }
 }

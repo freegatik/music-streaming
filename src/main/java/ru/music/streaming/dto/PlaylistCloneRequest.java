@@ -1,12 +1,8 @@
 package ru.music.streaming.dto;
 
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class PlaylistCloneRequest {
-
-    @NotNull(message = "Укажите пользователя, для которого нужно клонировать плейлист")
-    private Long targetUserId;
 
     @Size(max = 100, message = "Название не должно превышать 100 символов")
     private String name;
@@ -15,14 +11,6 @@ public class PlaylistCloneRequest {
     private String description;
 
     private Boolean makePublic;
-
-    public Long getTargetUserId() {
-        return targetUserId;
-    }
-
-    public void setTargetUserId(Long targetUserId) {
-        this.targetUserId = targetUserId;
-    }
 
     public String getName() {
         return name;

@@ -2,6 +2,8 @@ package ru.music.streaming.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -43,6 +45,28 @@ public class GlobalExceptionHandler {
         );
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+    
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
+                "Доступ запрещён",
+                ex.getMessage() != null ? ex.getMessage() : "У вас нет прав для выполнения этого действия"
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+    
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ex) {
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                "Ошибка аутентификации",
+                ex.getMessage() != null ? ex.getMessage() : "Требуется аутентификация"
+        );
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
     
     public static class ErrorResponse {
