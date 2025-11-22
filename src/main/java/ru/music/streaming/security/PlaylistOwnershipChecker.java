@@ -24,6 +24,11 @@ public class PlaylistOwnershipChecker {
         SecurityUser securityUser = (SecurityUser) principal;
         User currentUser = securityUser.getUser();
         
+        // Проверка на null
+        if (currentUser == null) {
+            return false;
+        }
+        
         // ADMIN может всё
         if (currentUser.getRole() == Role.ADMIN) {
             return true;

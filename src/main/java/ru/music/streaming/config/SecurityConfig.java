@@ -2,6 +2,7 @@ package ru.music.streaming.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -41,18 +42,23 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Публичные эндпоинты
                 .requestMatchers("/api/auth/register").permitAll()
-                .requestMatchers("/api/artists/**").permitAll() // GUEST доступ
-                .requestMatchers("/api/albums/**").permitAll() // GUEST доступ
-                .requestMatchers("/api/tracks/**").permitAll() // GUEST доступ
                 .requestMatchers("/api/playlists/public").permitAll() // Публичные плейлисты
                 
-                // Административные операции для артистов, альбомов, треков
-                .requestMatchers("/api/artists").hasRole("ADMIN") // POST
-                .requestMatchers("/api/artists/*").hasRole("ADMIN") // PUT, DELETE
-                .requestMatchers("/api/albums").hasRole("ADMIN") // POST
-                .requestMatchers("/api/albums/*").hasRole("ADMIN") // PUT, DELETE
-                .requestMatchers("/api/tracks").hasRole("ADMIN") // POST
-                .requestMatchers("/api/tracks/*").hasRole("ADMIN") // PUT, DELETE
+                // Административные операции для артистов, альбомов, треков (должны быть ПЕРЕД общими правилами)
+                .requestMatchers(HttpMethod.POST, "/api/artists").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/artists/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/artists/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/albums").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/albums/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/albums/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/tracks").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/tracks/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/tracks/**").hasRole("ADMIN")
+                
+                // GUEST доступ для чтения (GET) артистов, альбомов, треков
+                .requestMatchers("/api/artists/**").permitAll()
+                .requestMatchers("/api/albums/**").permitAll()
+                .requestMatchers("/api/tracks/**").permitAll()
                 
                 // Плейлисты: USER может создавать/изменять свои, ADMIN - все
                 // Детальная проверка владельца будет в контроллере
