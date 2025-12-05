@@ -22,11 +22,12 @@
 				"type": "text/javascript",
 				"exec": [
 					"var accessToken = pm.collectionVariables.get('accessToken');",
-					"if (!accessToken) {",
+					"if (!accessToken || accessToken.trim() === '') {",
 					"    var username = pm.collectionVariables.get('username');",
 					"    var password = pm.collectionVariables.get('password');",
 					"    if (username && password) {",
 					"        var authHeader = 'Basic ' + btoa(username + ':' + password);",
+					"        pm.request.headers.remove('Authorization');",
 					"        pm.request.headers.add({",
 					"            key: 'Authorization',",
 					"            value: authHeader",
@@ -248,7 +249,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"New Artist\",\n    \"biography\": \"Artist biography\",\n    \"country\": \"USA\"\n}"
+							"raw": "{\n    \"name\": \"New Artist\",\n    \"bio\": \"Artist biography\",\n    \"country\": \"USA\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/artists",
@@ -270,7 +271,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Updated Artist\",\n    \"biography\": \"Updated biography\",\n    \"country\": \"USA\"\n}"
+							"raw": "{\n    \"name\": \"Updated Artist\",\n    \"bio\": \"Updated biography\",\n    \"country\": \"USA\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/artists/1",
@@ -380,7 +381,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \"New Album\",\n    \"releaseDate\": \"2024-01-01\",\n    \"coverImageUrl\": \"https://example.com/cover.jpg\"\n}"
+							"raw": "{\n    \"title\": \"New Album\",\n    \"releaseDate\": \"2024-01-01\",\n    \"coverUrl\": \"https://example.com/cover.jpg\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/albums?artistId=1",
@@ -408,7 +409,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \"Updated Album\",\n    \"releaseDate\": \"2024-01-01\",\n    \"coverImageUrl\": \"https://example.com/cover.jpg\"\n}"
+							"raw": "{\n    \"title\": \"Updated Album\",\n    \"releaseDate\": \"2024-01-01\",\n    \"coverUrl\": \"https://example.com/cover.jpg\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/albums/1",
@@ -772,7 +773,12 @@
 					"name": "Add Track to Playlist (Owner/ADMIN)",
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}/tracks?trackId=1",
 							"host": ["{{baseUrl}}"],
@@ -826,7 +832,12 @@
 					"name": "Shuffle Playlist (Owner/ADMIN)",
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}/shuffle",
 							"host": ["{{baseUrl}}"],
@@ -884,6 +895,19 @@
 							"raw": "{{baseUrl}}/api/users/{{userId}}",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "users", "{{userId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by Email (Self/ADMIN)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/email/testuser@example.com",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "email", "testuser@example.com"]
 						}
 					},
 					"response": []
@@ -984,6 +1008,16 @@
 		},
 		{
 			"key": "playlistId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refreshToken",
 			"value": "",
 			"type": "string"
 		}
