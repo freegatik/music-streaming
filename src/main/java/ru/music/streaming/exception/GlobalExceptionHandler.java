@@ -68,6 +68,17 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
+
+    @ExceptionHandler(ru.music.streaming.exception.TokenException.class)
+    public ResponseEntity<ErrorResponse> handleTokenException(ru.music.streaming.exception.TokenException ex) {
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                "Ошибка токена",
+                ex.getMessage() != null ? ex.getMessage() : "Невалидный или истекший токен"
+        );
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
     
     public static class ErrorResponse {
         private LocalDateTime timestamp;
