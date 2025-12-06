@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
+import ru.music.streaming.dto.CreateUserRequest;
 import ru.music.streaming.dto.DailyMixRequest;
 import ru.music.streaming.dto.UserLibrarySummaryResponse;
 import ru.music.streaming.model.Playlist;
@@ -32,14 +33,17 @@ public class UserController {
     }
     
     @PostMapping
-    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
-        User created = userService.createUser(user);
+    public ResponseEntity<User> createUser(@Valid @RequestBody CreateUserRequest request) {
+        if (!ownershipChecker.isAdmin()) {
+            throw new AccessDeniedException("Только администратор может создавать пользователей");
+        }
+        
+        User created = userService.createUserWithRole(request);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
     
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
-        // Только ADMIN может видеть всех пользователей
         if (!ownershipChecker.isAdmin()) {
             throw new AccessDeniedException("Только администратор может просматривать список всех пользователей");
         }
@@ -54,7 +58,6 @@ public class UserController {
             throw new AccessDeniedException("Пользователь не аутентифицирован");
         }
         
-        // USER может видеть только себя, ADMIN - всех
         if (!ownershipChecker.isAdmin() && !currentUser.getId().equals(id)) {
             throw new AccessDeniedException("Вы можете просматривать только свои данные");
         }
@@ -71,7 +74,6 @@ public class UserController {
             throw new AccessDeniedException("Пользователь не аутентифицирован");
         }
         
-        // USER может изменять только себя, ADMIN - всех
         if (!ownershipChecker.isAdmin() && !currentUser.getId().equals(id)) {
             throw new AccessDeniedException("Вы можете изменять только свои данные");
         }
@@ -87,7 +89,6 @@ public class UserController {
             throw new AccessDeniedException("Пользователь не аутентифицирован");
         }
         
-        // USER может удалять только себя, ADMIN - всех
         if (!ownershipChecker.isAdmin() && !currentUser.getId().equals(id)) {
             throw new AccessDeniedException("Вы можете удалять только свой аккаунт");
         }
@@ -121,7 +122,6 @@ public class UserController {
             throw new AccessDeniedException("Пользователь не аутентифицирован");
         }
         
-        // USER может создавать микс только для себя, ADMIN - для всех
         if (!ownershipChecker.isAdmin() && !currentUser.getId().equals(userId)) {
             throw new AccessDeniedException("Вы можете создавать микс только для себя");
         }
@@ -137,7 +137,6 @@ public class UserController {
             throw new AccessDeniedException("Пользователь не аутентифицирован");
         }
         
-        // USER может видеть статистику только свою, ADMIN - всех
         if (!ownershipChecker.isAdmin() && !currentUser.getId().equals(userId)) {
             throw new AccessDeniedException("Вы можете просматривать статистику только свою");
         }

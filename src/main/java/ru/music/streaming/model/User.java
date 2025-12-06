@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,19 +31,15 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
     
-    @NotBlank(message = "Имя пользователя для входа не может быть пустым")
-    @Size(min = 3, max = 50, message = "Имя пользователя должно быть от 3 до 50 символов")
-    @Column(nullable = false, unique = true)
+    @Column(nullable = true, unique = true)
     private String username;
     
-    @NotBlank(message = "Пароль не может быть пустым")
-    @Column(nullable = false)
+    @Column(nullable = true)
     @JsonIgnore
     private String password;
     
-    @NotNull(message = "Роль пользователя должна быть указана")
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Role role;
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

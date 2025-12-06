@@ -24,17 +24,17 @@ public class PlaylistOwnershipChecker {
         SecurityUser securityUser = (SecurityUser) principal;
         User currentUser = securityUser.getUser();
         
-        // Проверка на null
         if (currentUser == null) {
             return false;
         }
         
-        // ADMIN может всё
         if (currentUser.getRole() == Role.ADMIN) {
             return true;
         }
         
-        // USER может только свои плейлисты
+        if (playlist.getUser() == null) {
+            return false;
+        }
         return playlist.getUser().getId().equals(currentUser.getId());
     }
     

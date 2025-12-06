@@ -9,6 +9,7 @@ import ru.music.streaming.model.Track;
 import ru.music.streaming.repository.AlbumRepository;
 import ru.music.streaming.repository.ArtistRepository;
 import ru.music.streaming.repository.TrackRepository;
+import ru.music.streaming.repository.UserRepository;
 
 import java.time.LocalDate;
 
@@ -18,18 +19,23 @@ public class DataInitializer implements CommandLineRunner {
     private final ArtistRepository artistRepository;
     private final AlbumRepository albumRepository;
     private final TrackRepository trackRepository;
+    private final UserRepository userRepository;
 
     public DataInitializer(ArtistRepository artistRepository,
                            AlbumRepository albumRepository,
-                           TrackRepository trackRepository) {
+                           TrackRepository trackRepository,
+                           UserRepository userRepository) {
         this.artistRepository = artistRepository;
         this.albumRepository = albumRepository;
         this.trackRepository = trackRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
     @Transactional
     public void run(String... args) {
+        userRepository.deleteAll();
+        
         if (artistRepository.count() > 0 || trackRepository.count() > 0) {
             return;
         }

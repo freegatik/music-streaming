@@ -13,10 +13,16 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import ru.music.streaming.security.JwtAuthenticationFilter;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -51,19 +57,17 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .csrfTokenRepository(tokenRepository)
                 .csrfTokenRequestHandler(requestHandler)
-                .ignoringRequestMatchers("/api/**") // Отключаем CSRF для всех API эндпоинтов
+                .ignoringRequestMatchers("/api/**")
             )
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Stateless для JWT
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
-                // Публичные эндпоинты
                 .requestMatchers("/api/auth/register").permitAll()
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/api/auth/refresh").permitAll()
-                .requestMatchers("/api/playlists/public").permitAll() // Публичные плейлисты
+                .requestMatchers("/api/playlists/public").permitAll()
                 
-                // Административные операции для артистов, альбомов, треков (должны быть ПЕРЕД общими правилами)
                 .requestMatchers(HttpMethod.POST, "/api/artists").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/artists/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/artists/**").hasRole("ADMIN")
@@ -74,26 +78,67 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/tracks/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/tracks/**").hasRole("ADMIN")
                 
-                // GUEST доступ для чтения (GET) артистов, альбомов, треков
                 .requestMatchers("/api/artists/**").permitAll()
                 .requestMatchers("/api/albums/**").permitAll()
                 .requestMatchers("/api/tracks/**").permitAll()
                 
-                // Плейлисты: USER может создавать/изменять свои, ADMIN - все
-                // Детальная проверка владельца будет в контроллере
                 .requestMatchers("/api/playlists/**").hasAnyRole("USER", "ADMIN")
-                
-                // Пользователи: USER видит только себя, ADMIN - всех
-                // Детальная проверка будет в контроллере
                 .requestMatchers("/api/users/**").hasAnyRole("USER", "ADMIN")
                 
-                // Все остальные запросы требуют аутентификации
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(new AuthenticationEntryPoint() {
+                    @Override
+                    public void commence(HttpServletRequest request, HttpServletResponse response,
+                                       org.springframework.security.core.AuthenticationException authException)
+                            throws IOException {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json;charset=UTF-8");
+                        String message = authException.getMessage() != null ? 
+                            escapeJson(authException.getMessage()) : "Требуется аутентификация";
+                        response.getWriter().write(
+                            "{\"timestamp\":\"" + java.time.LocalDateTime.now() + "\"," +
+                            "\"status\":401," +
+                            "\"error\":\"Ошибка аутентификации\"," +
+                            "\"message\":\"" + message + "\"}"
+                        );
+                    }
+                })
+                .accessDeniedHandler(new AccessDeniedHandler() {
+                    @Override
+                    public void handle(HttpServletRequest request, HttpServletResponse response,
+                                     org.springframework.security.access.AccessDeniedException accessDeniedException)
+                            throws IOException {
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType("application/json;charset=UTF-8");
+                        String message = accessDeniedException.getMessage() != null ? 
+                            escapeJson(accessDeniedException.getMessage()) : 
+                            "У вас нет прав для выполнения этого действия";
+                        response.getWriter().write(
+                            "{\"timestamp\":\"" + java.time.LocalDateTime.now() + "\"," +
+                            "\"status\":403," +
+                            "\"error\":\"Доступ запрещён\"," +
+                            "\"message\":\"" + message + "\"}"
+                        );
+                    }
+                })
+            )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .httpBasic(httpBasic -> {}); // Оставляем Basic Auth для обратной совместимости
+            .httpBasic(httpBasic -> {});
         
         return http.build();
+    }
+    
+    private String escapeJson(String str) {
+        if (str == null) {
+            return "";
+        }
+        return str.replace("\\", "\\\\")
+                  .replace("\"", "\\\"")
+                  .replace("\n", "\\n")
+                  .replace("\r", "\\r")
+                  .replace("\t", "\\t");
     }
 }
 
