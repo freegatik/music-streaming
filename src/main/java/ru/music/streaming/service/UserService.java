@@ -7,15 +7,18 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.music.streaming.dto.CreateUserRequest;
 import ru.music.streaming.dto.RegistrationRequest;
 import ru.music.streaming.dto.UserLibrarySummaryResponse;
+import ru.music.streaming.dto.UserSessionResponse;
 import ru.music.streaming.model.Artist;
 import ru.music.streaming.model.Playlist;
 import ru.music.streaming.model.PlaylistTrack;
 import ru.music.streaming.model.Role;
 import ru.music.streaming.model.Track;
 import ru.music.streaming.model.User;
+import ru.music.streaming.model.UserSession;
 import ru.music.streaming.repository.PlaylistRepository;
 import ru.music.streaming.repository.PlaylistTrackRepository;
 import ru.music.streaming.repository.UserRepository;
+import ru.music.streaming.repository.UserSessionRepository;
 
 import java.util.HashSet;
 import java.util.List;
@@ -28,16 +31,19 @@ public class UserService {
     private final UserRepository userRepository;
     private final PlaylistRepository playlistRepository;
     private final PlaylistTrackRepository playlistTrackRepository;
+    private final UserSessionRepository sessionRepository;
     private final PasswordEncoder passwordEncoder;
     
     @Autowired
     public UserService(UserRepository userRepository,
                        PlaylistRepository playlistRepository,
                        PlaylistTrackRepository playlistTrackRepository,
+                       UserSessionRepository sessionRepository,
                        PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.playlistRepository = playlistRepository;
         this.playlistTrackRepository = playlistTrackRepository;
+        this.sessionRepository = sessionRepository;
         this.passwordEncoder = passwordEncoder;
     }
     
@@ -150,5 +156,19 @@ public class UserService {
                 uniqueArtistIds.size(),
                 totalDuration
         );
+    }
+    
+    public List<UserSessionResponse> getUserSessions(String userEmail) {
+        List<UserSession> sessions = sessionRepository.findByUserEmail(userEmail);
+        return sessions.stream()
+                .map(session -> new UserSessionResponse(
+                        session.getId(),
+                        session.getUserEmail(),
+                        session.getDeviceId(),
+                        session.getAccessTokenExpiry(),
+                        session.getRefreshTokenExpiry(),
+                        session.getStatus()
+                ))
+                .toList();
     }
 }

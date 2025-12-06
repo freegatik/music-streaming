@@ -2,7 +2,11 @@ package ru.music.streaming.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import ru.music.streaming.exception.TokenException;
 import ru.music.streaming.model.SessionStatus;
 import ru.music.streaming.model.User;
@@ -20,12 +24,16 @@ public class TokenService {
     private final UserSessionRepository sessionRepository;
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final TransactionTemplate transactionTemplate;
 
     @Autowired
-    public TokenService(UserSessionRepository sessionRepository, JwtTokenProvider tokenProvider, UserRepository userRepository) {
+    public TokenService(UserSessionRepository sessionRepository, JwtTokenProvider tokenProvider, UserRepository userRepository, PlatformTransactionManager transactionManager) {
         this.sessionRepository = sessionRepository;
         this.tokenProvider = tokenProvider;
         this.userRepository = userRepository;
+        DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.transactionTemplate = new TransactionTemplate(transactionManager, def);
     }
 
     @Transactional
@@ -65,8 +73,7 @@ public class TokenService {
                 .orElseThrow(() -> new TokenException("Сессия не найдена"));
 
         if (session.getStatus() == SessionStatus.USED) {
-            session.setStatus(SessionStatus.REVOKED);
-            sessionRepository.save(session);
+            revokeSessionInNewTransaction(session.getId());
             throw new TokenException("Обнаружена попытка повторного использования refresh токена");
         }
 
@@ -75,8 +82,7 @@ public class TokenService {
         }
 
         if (session.getRefreshTokenExpiry().isBefore(Instant.now())) {
-            session.setStatus(SessionStatus.REVOKED);
-            sessionRepository.save(session);
+            revokeSessionInNewTransaction(session.getId());
             throw new TokenException("Refresh токен истек");
         }
 
@@ -119,6 +125,17 @@ public class TokenService {
         return sessionRepository.findByRefreshTokenAndStatus(refreshToken, SessionStatus.ACTIVE)
                 .map(session -> session.getRefreshTokenExpiry().isAfter(Instant.now()))
                 .orElse(false);
+    }
+
+
+    public void revokeSessionInNewTransaction(UUID sessionId) {
+        transactionTemplate.executeWithoutResult(status -> {
+            UserSession session = sessionRepository.findById(sessionId).orElse(null);
+            if (session != null) {
+                session.setStatus(SessionStatus.REVOKED);
+                sessionRepository.saveAndFlush(session);
+            }
+        });
     }
 
     @Transactional

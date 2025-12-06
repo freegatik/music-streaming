@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import ru.music.streaming.model.SessionStatus;
 import ru.music.streaming.model.UserSession;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,5 +15,7 @@ public interface UserSessionRepository extends JpaRepository<UserSession, UUID> 
     Optional<UserSession> findByRefreshToken(String refreshToken);
 
     Optional<UserSession> findByRefreshTokenAndStatus(String refreshToken, SessionStatus status);
+    
+    List<UserSession> findByUserEmail(String userEmail);
 }
 

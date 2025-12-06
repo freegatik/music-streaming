@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.music.streaming.dto.CreateUserRequest;
 import ru.music.streaming.dto.DailyMixRequest;
 import ru.music.streaming.dto.UserLibrarySummaryResponse;
+import ru.music.streaming.dto.UserSessionResponse;
 import ru.music.streaming.model.Playlist;
 import ru.music.streaming.model.User;
 import ru.music.streaming.security.PlaylistOwnershipChecker;
@@ -143,5 +144,21 @@ public class UserController {
         
         UserLibrarySummaryResponse summary = userService.getUserLibrarySummary(userId);
         return ResponseEntity.ok(summary);
+    }
+    
+    @GetMapping("/{userId}/sessions")
+    public ResponseEntity<List<UserSessionResponse>> getUserSessions(@PathVariable Long userId) {
+        var currentUser = ownershipChecker.getCurrentUser();
+        if (currentUser == null) {
+            throw new AccessDeniedException("Пользователь не аутентифицирован");
+        }
+        
+        if (!ownershipChecker.isAdmin() && !currentUser.getId().equals(userId)) {
+            throw new AccessDeniedException("Вы можете просматривать только свои сессии");
+        }
+        
+        User user = userService.getUserById(userId);
+        List<UserSessionResponse> sessions = userService.getUserSessions(user.getEmail());
+        return ResponseEntity.ok(sessions);
     }
 }

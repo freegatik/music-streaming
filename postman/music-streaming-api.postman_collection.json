@@ -1017,6 +1017,19 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Get User Sessions (Self/ADMIN)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}/sessions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "{{userId}}", "sessions"]
+						}
+					},
+					"response": []
 				}
 			]
 		}
