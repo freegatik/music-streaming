@@ -39,6 +39,13 @@ out/
 ### Certificates and Keystores (PRIVATE - DO NOT COMMIT) ###
 certs/*.jks
 certs/*.csr
+certs/*.p12
+certs/*.pfx
 *.jks
 *.csr
+*.p12
+*.pfx
+*.key
+*.pem
 !certs/*.crt
+!certs/README.md

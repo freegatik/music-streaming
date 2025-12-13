@@ -181,6 +181,4 @@ echo "Пароли (сохраните их в секретах CI/CD):"
 echo "  ROOT_CA_PASS: $ROOT_CA_PASS"
 echo "  INT_CA_PASS: $INT_CA_PASS"
 echo "  SERVER_PASS: $SERVER_PASS"
-echo ""
-echo "⚠️  ВАЖНО: Файлы .jks содержат приватные ключи! Не коммитьте их в репозиторий!"
 
