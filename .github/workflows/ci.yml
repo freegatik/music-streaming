@@ -45,21 +45,27 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
       
-      - name: Generate certificates (if keystore not provided)
-        if: ${{ secrets.SSL_KEYSTORE_BASE64 == '' }}
+      - name: Prepare keystore for build
         run: |
-          chmod +x scripts/generate_certificates.sh
-          ./scripts/generate_certificates.sh ${{ secrets.STUDENT_ID }}
+          mkdir -p src/main/resources
+          if [ -n "${{ secrets.SSL_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.SSL_KEYSTORE_BASE64 }}" | base64 -d > src/main/resources/keystore.jks
+            chmod 600 src/main/resources/keystore.jks
+          else
+            echo "SSL_KEYSTORE_BASE64 not set, will generate certificates"
+          fi
+        continue-on-error: true
+      
+      - name: Generate certificates (if keystore not provided)
+        run: |
+          if [ ! -f src/main/resources/keystore.jks ]; then
+            chmod +x scripts/generate_certificates.sh
+            ./scripts/generate_certificates.sh ${{ secrets.STUDENT_ID }}
+            cp certs/musicServer.jks src/main/resources/keystore.jks
+          fi
         env:
           STUDENT_ID: ${{ secrets.STUDENT_ID }}
         continue-on-error: true
-      
-      - name: Prepare keystore for build
-        if: ${{ secrets.SSL_KEYSTORE_BASE64 != '' }}
-        run: |
-          mkdir -p src/main/resources
-          echo "${{ secrets.SSL_KEYSTORE_BASE64 }}" | base64 -d > src/main/resources/keystore.jks
-          chmod 600 src/main/resources/keystore.jks
       
       - name: Build JAR with TLS support
         run: ./gradlew bootJar
