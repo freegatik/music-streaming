@@ -261,7 +261,10 @@ public class PlaylistService {
         for (Track track : mixTracks) {
             playlistTrackRepository.save(new PlaylistTrack(mix, track, index++));
         }
-        return mix;
+        playlistTrackRepository.flush();
+        Long mixId = mix.getId();
+        entityManager.clear();
+        return getPlaylistByIdWithTracks(mixId);
     }
     
     @Transactional(readOnly = true)
