@@ -35,3 +35,10 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Certificates and Keystores (PRIVATE - DO NOT COMMIT) ###
+certs/*.jks
+certs/*.csr
+*.jks
+*.csr
+!certs/*.crt

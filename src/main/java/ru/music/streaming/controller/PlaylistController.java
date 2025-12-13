@@ -10,7 +10,6 @@ import ru.music.streaming.dto.PlaylistCloneRequest;
 import ru.music.streaming.dto.PlaylistMoveRequest;
 import ru.music.streaming.dto.PlaylistTrackResponse;
 import ru.music.streaming.model.Playlist;
-import ru.music.streaming.model.PlaylistTrack;
 import ru.music.streaming.security.PlaylistOwnershipChecker;
 import ru.music.streaming.service.PlaylistService;
 
@@ -50,7 +49,7 @@ public class PlaylistController {
             playlists = playlistService.getAllPlaylists();
         } else {
             playlists = playlistService.getAllPlaylists().stream()
-                    .filter(p -> p.getIsPublic() || p.getUser().getId().equals(currentUser.getId()))
+                    .filter(p -> p.getIsPublic() || (p.getUser() != null && p.getUser().getId().equals(currentUser.getId())))
                     .toList();
         }
         
@@ -63,7 +62,7 @@ public class PlaylistController {
         var currentUser = ownershipChecker.getCurrentUser();
         
         if (!playlist.getIsPublic() && (currentUser == null || 
-            (!ownershipChecker.isAdmin() && !playlist.getUser().getId().equals(currentUser.getId())))) {
+            (!ownershipChecker.isAdmin() && (playlist.getUser() == null || !playlist.getUser().getId().equals(currentUser.getId()))))) {
             throw new AccessDeniedException("У вас нет доступа к этому плейлисту");
         }
         
@@ -122,7 +121,7 @@ public class PlaylistController {
                     .toList();
         } else if (!ownershipChecker.isAdmin()) {
             playlists = playlists.stream()
-                    .filter(p -> p.getIsPublic() || p.getUser().getId().equals(currentUser.getId()))
+                    .filter(p -> p.getIsPublic() || (p.getUser() != null && p.getUser().getId().equals(currentUser.getId())))
                     .toList();
         }
         
@@ -137,11 +136,10 @@ public class PlaylistController {
         if (!ownershipChecker.isOwnerOrAdmin(existing)) {
             throw new AccessDeniedException("У вас нет прав для изменения этого плейлиста");
         }
-        PlaylistTrack playlistTrack = playlistService.addTrackToPlaylist(playlistId, trackId, position);
-        Long trackIdentifier = playlistTrack.getTrack() != null ? playlistTrack.getTrack().getId() : null;
+        playlistService.addTrackToPlaylist(playlistId, trackId, position);
         List<PlaylistTrackResponse> view = playlistService.getPlaylistView(playlistId);
         PlaylistTrackResponse response = view.stream()
-                .filter(item -> trackIdentifier != null && item.getTrackId().equals(trackIdentifier))
+                .filter(item -> item.getTrackId().equals(trackId))
                 .findFirst()
                 .orElseGet(() -> {
                     if (!view.isEmpty()) {
@@ -214,7 +212,7 @@ public class PlaylistController {
         var currentUser = ownershipChecker.getCurrentUser();
         
         if (!playlist.getIsPublic() && (currentUser == null || 
-            (!ownershipChecker.isAdmin() && !playlist.getUser().getId().equals(currentUser.getId())))) {
+            (!ownershipChecker.isAdmin() && (playlist.getUser() == null || !playlist.getUser().getId().equals(currentUser.getId()))))) {
             throw new AccessDeniedException("У вас нет доступа к этому плейлисту");
         }
         

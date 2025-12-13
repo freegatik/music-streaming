@@ -42,8 +42,9 @@ public class AlbumController {
     
     @PutMapping("/{id}")
     public ResponseEntity<Album> updateAlbum(@PathVariable Long id, 
-                                            @Valid @RequestBody Album album) {
-        Album updated = albumService.updateAlbum(id, album);
+                                            @Valid @RequestBody Album album,
+                                            @RequestParam(required = false) Long artistId) {
+        Album updated = albumService.updateAlbum(id, album, artistId);
         return ResponseEntity.ok(updated);
     }
     

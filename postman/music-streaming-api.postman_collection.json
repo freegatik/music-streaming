@@ -84,6 +84,7 @@
 				},
 				{
 					"name": "Login",
+					"description": "Логин с использованием переменных username и password",
 					"event": [
 						{
 							"listen": "test",
@@ -93,6 +94,7 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
 									"    pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);",
+									"    console.log(\"Успешный логин. Токен сохранен.\");",
 									"}"
 								],
 								"type": "text/javascript"
@@ -118,6 +120,124 @@
 							"raw": "{{baseUrl}}/api/auth/login",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "auth", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login as ADMIN",
+					"description": "Быстрый логин под администратором (admin/Admin123!@#)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"    pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);",
+									"    pm.collectionVariables.set(\"username\", \"admin\");",
+									"    pm.collectionVariables.set(\"password\", \"Admin123!@#\");",
+									"    console.log(\"Успешный логин как ADMIN. Токен сохранен.\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"Admin123!@#\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login as USER",
+					"description": "Быстрый логин под обычным пользователем (testuser/Test123!@#)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"    pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);",
+									"    pm.collectionVariables.set(\"username\", \"testuser\");",
+									"    pm.collectionVariables.set(\"password\", \"Test123!@#\");",
+									"    console.log(\"Успешный логин как USER. Токен сохранен.\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"Test123!@#\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout (Clear Token)",
+					"description": "Очистить токен для переключения на GUEST (неавторизованный пользователь)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set(\"accessToken\", \"\");",
+									"pm.collectionVariables.set(\"refreshToken\", \"\");",
+									"console.log(\"Токены очищены. Теперь вы работаете как GUEST.\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/artists",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "artists"]
 						}
 					},
 					"response": []
@@ -158,6 +278,37 @@
 							"raw": "{{baseUrl}}/api/auth/refresh",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "auth", "refresh"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User (Check Role)",
+					"description": "Получить информацию о текущем аутентифицированном пользователе, включая роль. Полезно для проверки, под какой ролью вы работаете.",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData && jsonData.id) {",
+									"        pm.collectionVariables.set('userId', jsonData.id);",
+									"        console.log('Автоматически установлен userId: ' + jsonData.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "me"]
 						}
 					},
 					"response": []
@@ -399,6 +550,7 @@
 				},
 				{
 					"name": "Update Album (ADMIN)",
+					"description": "Обновление альбома. Можно изменить artist через query параметр artistId (опционально).",
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -412,9 +564,16 @@
 							"raw": "{\n    \"title\": \"Updated Album\",\n    \"releaseDate\": \"2024-01-01\",\n    \"coverUrl\": \"https://example.com/cover.jpg\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/albums/1",
+							"raw": "{{baseUrl}}/api/albums/1?artistId=2",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "albums", "1"]
+							"path": ["api", "albums", "1"],
+							"query": [
+								{
+									"key": "artistId",
+									"value": "2",
+									"description": "ID нового артиста (опционально, для изменения связи)"
+								}
+							]
 						}
 					},
 					"response": []
@@ -541,6 +700,7 @@
 				},
 				{
 					"name": "Create Track (ADMIN)",
+					"description": "Создание трека. Требуется artistId (обязательно) и albumId (опционально) в query параметрах. Токен подставляется автоматически из переменной accessToken.",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -560,11 +720,13 @@
 							"query": [
 								{
 									"key": "artistId",
-									"value": "1"
+									"value": "1",
+									"description": "ID артиста (обязательно)"
 								},
 								{
 									"key": "albumId",
-									"value": "1"
+									"value": "1",
+									"description": "ID альбома (опционально)"
 								}
 							]
 						}
@@ -573,6 +735,7 @@
 				},
 				{
 					"name": "Update Track (ADMIN)",
+					"description": "Обновление трека. Можно изменить artist и album через query параметры artistId и albumId (опционально).",
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -586,9 +749,21 @@
 							"raw": "{\n    \"title\": \"Updated Track\",\n    \"durationSeconds\": 250,\n    \"genre\": \"Rock\",\n    \"audioUrl\": \"https://example.com/audio.mp3\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/tracks/1",
+							"raw": "{{baseUrl}}/api/tracks/1?artistId=2&albumId=3",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "tracks", "1"]
+							"path": ["api", "tracks", "1"],
+							"query": [
+								{
+									"key": "artistId",
+									"value": "2",
+									"description": "ID нового артиста (опционально, для изменения связи)"
+								},
+								{
+									"key": "albumId",
+									"value": "3",
+									"description": "ID нового альбома (опционально, для изменения связи)"
+								}
+							]
 						}
 					},
 					"response": []
@@ -613,6 +788,23 @@
 			"item": [
 				{
 					"name": "Get Public Playlists",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData && jsonData.length > 0 && !pm.collectionVariables.get('playlistId')) {",
+									"        pm.collectionVariables.set('playlistId', jsonData[0].id);",
+									"        console.log('Автоматически установлен playlistId: ' + jsonData[0].id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -629,6 +821,23 @@
 				},
 				{
 					"name": "Get All Playlists (USER/ADMIN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData && jsonData.length > 0 && !pm.collectionVariables.get('playlistId')) {",
+									"        pm.collectionVariables.set('playlistId', jsonData[0].id);",
+									"        console.log('Автоматически установлен playlistId: ' + jsonData[0].id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -642,19 +851,35 @@
 				},
 				{
 					"name": "Get Playlist by ID (USER/ADMIN)",
+					"description": "Получить плейлист по ID. Использует переменную {{playlistId}}, которая устанавливается при создании плейлиста. Или можно указать ID вручную.",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/playlists/1",
+							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "playlists", "1"]
+							"path": ["api", "playlists", "{{playlistId}}"]
 						}
 					},
 					"response": []
 				},
 				{
 					"name": "Get Playlists by User (USER/ADMIN)",
+					"description": "Получить плейлисты пользователя по его ID. Использует переменную {{userId}}. Для получения своего ID используйте 'Get Current User (Check Role)'. Работает без аутентификации (возвращает только публичные плейлисты).",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const userId = pm.collectionVariables.get('userId');",
+									"if (!userId || userId === '') {",
+									"    console.warn('⚠️ Переменная userId не установлена. Выполните \"Get Current User (Check Role)\" или укажите userId вручную.');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -687,6 +912,7 @@
 				},
 				{
 					"name": "Create Playlist (USER/ADMIN)",
+					"description": "Создание плейлиста. Плейлист автоматически привязывается к текущему пользователю.",
 					"event": [
 						{
 							"listen": "test",
@@ -712,6 +938,52 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"name\": \"My Playlist\",\n    \"description\": \"My favorite tracks\",\n    \"isPublic\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Public Playlist Example",
+					"description": "Пример создания публичного плейлиста",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Chill Vibes\",\n    \"description\": \"Relaxing indie tracks\",\n    \"isPublic\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/playlists",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "playlists"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Private Playlist Example",
+					"description": "Пример создания приватного плейлиста",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My Favorites\",\n    \"description\": \"My personal favorite tracks\",\n    \"isPublic\": false\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/playlists",
@@ -771,14 +1043,10 @@
 				},
 				{
 					"name": "Add Track to Playlist (Owner/ADMIN)",
+					"description": "Добавить трек в плейлист. trackId - обязательный query параметр, position - опциональный.",
 					"request": {
 						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}/tracks?trackId=1",
 							"host": ["{{baseUrl}}"],
@@ -786,7 +1054,14 @@
 							"query": [
 								{
 									"key": "trackId",
-									"value": "1"
+									"value": "1",
+									"description": "ID трека для добавления"
+								},
+								{
+									"key": "position",
+									"value": "",
+									"description": "Позиция в плейлисте (опционально, по умолчанию добавляется в конец)",
+									"disabled": true
 								}
 							]
 						}
@@ -830,14 +1105,10 @@
 				},
 				{
 					"name": "Shuffle Playlist (Owner/ADMIN)",
+					"description": "Перемешать треки в плейлисте в случайном порядке.",
 					"request": {
 						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/api/playlists/{{playlistId}}/shuffle",
 							"host": ["{{baseUrl}}"],
@@ -1043,12 +1314,38 @@
 		{
 			"key": "username",
 			"value": "",
-			"type": "string"
+			"type": "string",
+			"description": "Текущий username для логина"
 		},
 		{
 			"key": "password",
 			"value": "",
-			"type": "string"
+			"type": "string",
+			"description": "Текущий password для логина"
+		},
+		{
+			"key": "adminUsername",
+			"value": "admin",
+			"type": "string",
+			"description": "Username администратора"
+		},
+		{
+			"key": "adminPassword",
+			"value": "Admin123!@#",
+			"type": "string",
+			"description": "Password администратора"
+		},
+		{
+			"key": "userUsername",
+			"value": "testuser",
+			"type": "string",
+			"description": "Username обычного пользователя"
+		},
+		{
+			"key": "userPassword",
+			"value": "Test123!@#",
+			"type": "string",
+			"description": "Password обычного пользователя"
 		},
 		{
 			"key": "userId",
@@ -1063,12 +1360,14 @@
 		{
 			"key": "accessToken",
 			"value": "",
-			"type": "string"
+			"type": "string",
+			"description": "JWT токен доступа (автоматически обновляется при логине)"
 		},
 		{
 			"key": "refreshToken",
 			"value": "",
-			"type": "string"
+			"type": "string",
+			"description": "JWT refresh токен (автоматически обновляется при логине)"
 		}
 	]
 }

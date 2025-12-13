@@ -11,8 +11,10 @@ import java.util.Optional;
 @Repository
 public interface PlaylistTrackRepository extends JpaRepository<PlaylistTrack, Long> {
     
+    @Query("SELECT pt FROM PlaylistTrack pt JOIN FETCH pt.track t LEFT JOIN FETCH t.artist LEFT JOIN FETCH t.album WHERE pt.playlist.id = :playlistId ORDER BY pt.position ASC")
     List<PlaylistTrack> findByPlaylistIdOrderByPositionAsc(Long playlistId);
 
+    @Query("SELECT pt FROM PlaylistTrack pt JOIN FETCH pt.track t LEFT JOIN FETCH t.artist LEFT JOIN FETCH t.album WHERE pt.playlist.id = :playlistId")
     List<PlaylistTrack> findByPlaylistId(Long playlistId);
     
     Optional<PlaylistTrack> findByPlaylistIdAndPosition(Long playlistId, Integer position);
@@ -26,6 +28,6 @@ public interface PlaylistTrackRepository extends JpaRepository<PlaylistTrack, Lo
     @Query("SELECT MAX(pt.position) FROM PlaylistTrack pt WHERE pt.playlist.id = :playlistId")
     Integer findMaxPositionByPlaylistId(Long playlistId);
 
-    @Query("SELECT pt FROM PlaylistTrack pt WHERE pt.playlist.user.id = :userId")
+    @Query("SELECT pt FROM PlaylistTrack pt JOIN FETCH pt.track t LEFT JOIN FETCH t.artist LEFT JOIN FETCH t.album WHERE pt.playlist.user.id = :userId")
     List<PlaylistTrack> findByUserId(Long userId);
 }

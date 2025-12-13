@@ -107,7 +107,6 @@ public class UserController {
         
         User user = userService.getUserByEmail(email);
         
-        // USER может видеть только себя, ADMIN - всех
         if (!ownershipChecker.isAdmin() && !currentUser.getEmail().equals(email)) {
             throw new AccessDeniedException("Вы можете просматривать только свои данные");
         }

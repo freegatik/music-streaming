@@ -43,8 +43,10 @@ public class TrackController {
     
     @PutMapping("/{id}")
     public ResponseEntity<Track> updateTrack(@PathVariable Long id, 
-                                            @Valid @RequestBody Track track) {
-        Track updated = trackService.updateTrack(id, track);
+                                            @Valid @RequestBody Track track,
+                                            @RequestParam(required = false) Long artistId,
+                                            @RequestParam(required = false) Long albumId) {
+        Track updated = trackService.updateTrack(id, track, artistId, albumId);
         return ResponseEntity.ok(updated);
     }
     

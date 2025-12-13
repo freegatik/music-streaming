@@ -26,7 +26,6 @@ public class PlaylistTrack {
     @JsonIgnore
     private Track track;
     
-    @Min(value = 0, message = "Позиция должна быть неотрицательной")
     @Column(nullable = false)
     private Integer position;
     

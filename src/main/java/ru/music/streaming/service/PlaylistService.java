@@ -1,5 +1,7 @@
 package ru.music.streaming.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +32,9 @@ public class PlaylistService {
     private final UserService userService;
     private final TrackService trackService;
     
+    @PersistenceContext
+    private EntityManager entityManager;
+    
     @Autowired
     public PlaylistService(PlaylistRepository playlistRepository, 
                           PlaylistTrackRepository playlistTrackRepository,
@@ -54,6 +59,11 @@ public class PlaylistService {
     
     public Playlist getPlaylistById(Long id) {
         return playlistRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Плейлист с ID " + id + " не найден"));
+    }
+    
+    public Playlist getPlaylistByIdWithTracks(Long id) {
+        return playlistRepository.findByIdWithTracks(id)
                 .orElseThrow(() -> new RuntimeException("Плейлист с ID " + id + " не найден"));
     }
     
@@ -87,25 +97,31 @@ public class PlaylistService {
     }
     
     @Transactional
-    public PlaylistTrack addTrackToPlaylist(Long playlistId, Long trackId, Integer position) {
-        Playlist playlist = getPlaylistById(playlistId);
-        Track track = trackService.getTrackById(trackId);
-        
-        if (playlistTrackRepository.existsByPlaylistIdAndTrackId(playlistId, trackId)) {
-            throw new RuntimeException("Трек уже существует в плейлисте");
+    public void addTrackToPlaylist(Long playlistId, Long trackId, Integer position) {
+        try {
+            Playlist playlist = getPlaylistById(playlistId);
+            Track track = trackService.getTrackById(trackId);
+            
+            if (playlistTrackRepository.existsByPlaylistIdAndTrackId(playlistId, trackId)) {
+                throw new RuntimeException("Трек уже существует в плейлисте");
+            }
+            
+            if (position == null || position < 0) {
+                Integer maxPosition = playlistTrackRepository.findMaxPositionByPlaylistId(playlistId);
+                position = (maxPosition == null) ? 0 : maxPosition + 1;
+            }
+            
+            if (playlistTrackRepository.existsByPlaylistIdAndPosition(playlistId, position)) {
+                normalizePositions(playlistId);
+                Integer maxPosition = playlistTrackRepository.findMaxPositionByPlaylistId(playlistId);
+                position = (maxPosition == null) ? 0 : maxPosition + 1;
+            }
+            
+            PlaylistTrack playlistTrack = new PlaylistTrack(playlist, track, position);
+            playlistTrackRepository.save(playlistTrack);
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при добавлении трека в плейлист: " + e.getMessage(), e);
         }
-        
-        if (position == null) {
-            Integer maxPosition = playlistTrackRepository.findMaxPositionByPlaylistId(playlistId);
-            position = (maxPosition == null) ? 0 : maxPosition + 1;
-        }
-        
-        if (playlistTrackRepository.existsByPlaylistIdAndPosition(playlistId, position)) {
-            throw new RuntimeException("Позиция " + position + " в плейлисте уже занята");
-        }
-        
-        PlaylistTrack playlistTrack = new PlaylistTrack(playlist, track, position);
-        return playlistTrackRepository.save(playlistTrack);
     }
     
     @Transactional
@@ -124,51 +140,79 @@ public class PlaylistService {
     
     @Transactional
     public void moveTrackWithinPlaylist(Long playlistId, Long trackId, Integer newPosition) {
-        if (newPosition == null) {
-            throw new RuntimeException("Укажите новую позицию трека");
+        try {
+            if (newPosition == null) {
+                throw new RuntimeException("Укажите новую позицию трека");
+            }
+            Playlist playlist = getPlaylistById(playlistId);
+            List<PlaylistTrack> tracks = new ArrayList<>(playlistTrackRepository.findByPlaylistIdOrderByPositionAsc(playlist.getId()));
+            if (tracks.isEmpty()) {
+                throw new RuntimeException("Плейлист пуст");
+            }
+            PlaylistTrack target = null;
+            for (PlaylistTrack pt : tracks) {
+                Track track = pt.getTrack();
+                if (track != null && track.getId() != null && Objects.equals(track.getId(), trackId)) {
+                    target = pt;
+                    break;
+                }
+            }
+            if (target == null) {
+                throw new RuntimeException("Трек не найден в плейлисте");
+            }
+            tracks.remove(target);
+            int boundedPosition = Math.max(0, Math.min(newPosition, tracks.size()));
+            tracks.add(boundedPosition, target);
+            persistPositions(tracks);
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при перемещении трека в плейлисте: " + e.getMessage(), e);
         }
-        Playlist playlist = getPlaylistById(playlistId);
-        List<PlaylistTrack> tracks = new ArrayList<>(playlistTrackRepository.findByPlaylistIdOrderByPositionAsc(playlist.getId()));
-        if (tracks.isEmpty()) {
-            throw new RuntimeException("Плейлист пуст");
-        }
-        PlaylistTrack target = tracks.stream()
-                .filter(pt -> Objects.equals(pt.getTrack().getId(), trackId))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Трек не найден в плейлисте"));
-        tracks.remove(target);
-        int boundedPosition = Math.max(0, Math.min(newPosition, tracks.size()));
-        tracks.add(boundedPosition, target);
-        persistPositions(tracks);
     }
     
     @Transactional
     public void shufflePlaylist(Long playlistId) {
-        Playlist playlist = getPlaylistById(playlistId);
-        List<PlaylistTrack> tracks = new ArrayList<>(playlistTrackRepository.findByPlaylistIdOrderByPositionAsc(playlist.getId()));
-        if (tracks.isEmpty()) {
-            throw new RuntimeException("Плейлист пуст");
+        try {
+            Playlist playlist = getPlaylistById(playlistId);
+            List<PlaylistTrack> tracks = new ArrayList<>(playlistTrackRepository.findByPlaylistIdOrderByPositionAsc(playlist.getId()));
+            if (tracks.isEmpty()) {
+                throw new RuntimeException("Плейлист пуст");
+            }
+            Collections.shuffle(tracks);
+            persistPositions(tracks);
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при перемешивании плейлиста: " + e.getMessage(), e);
         }
-        Collections.shuffle(tracks);
-        persistPositions(tracks);
     }
     
     @Transactional
     public Playlist clonePlaylist(Long sourcePlaylistId, Long targetUserId, String name, String description, Boolean makePublic) {
-        Playlist source = getPlaylistById(sourcePlaylistId);
-        User targetUser = userService.getUserById(targetUserId);
-        String cloneName = (name != null && !name.isBlank())
-                ? name.trim()
-                : source.getName() + " (копия)";
-        Playlist clone = new Playlist(cloneName, description != null ? description : source.getDescription(),
-                targetUser, Boolean.TRUE.equals(makePublic));
-        clone = playlistRepository.save(clone);
-        List<PlaylistTrack> sourceTracks = playlistTrackRepository.findByPlaylistIdOrderByPositionAsc(sourcePlaylistId);
-        int index = 0;
-        for (PlaylistTrack track : sourceTracks) {
-            playlistTrackRepository.save(new PlaylistTrack(clone, track.getTrack(), index++));
+        try {
+            Playlist source = getPlaylistById(sourcePlaylistId);
+            User targetUser = userService.getUserById(targetUserId);
+            String cloneName = (name != null && !name.isBlank())
+                    ? name.trim()
+                    : source.getName() + " (копия)";
+            Playlist clone = new Playlist(cloneName, description != null ? description : source.getDescription(),
+                    targetUser, Boolean.TRUE.equals(makePublic));
+            clone = playlistRepository.save(clone);
+            List<PlaylistTrack> sourceTracks = playlistTrackRepository.findByPlaylistIdOrderByPositionAsc(sourcePlaylistId);
+            int index = 0;
+            for (PlaylistTrack playlistTrack : sourceTracks) {
+                Track track = playlistTrack.getTrack();
+                if (track != null && track.getId() != null) {
+                    Track loadedTrack = trackService.getTrackById(track.getId());
+                    PlaylistTrack newPlaylistTrack = new PlaylistTrack(clone, loadedTrack, index);
+                    playlistTrackRepository.save(newPlaylistTrack);
+                    index++;
+                }
+            }
+            playlistTrackRepository.flush();
+            Long cloneId = clone.getId();
+            entityManager.clear();
+            return getPlaylistByIdWithTracks(cloneId);
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при клонировании плейлиста: " + e.getMessage(), e);
         }
-        return clone;
     }
     
     @Transactional
@@ -222,34 +266,94 @@ public class PlaylistService {
     
     @Transactional(readOnly = true)
     public List<PlaylistTrackResponse> getPlaylistView(Long playlistId) {
-        return playlistTrackRepository.findByPlaylistIdOrderByPositionAsc(playlistId)
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        try {
+            List<PlaylistTrack> playlistTracks = playlistTrackRepository.findByPlaylistIdOrderByPositionAsc(playlistId);
+            return playlistTracks.stream()
+                    .map(this::toResponse)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при получении треков плейлиста: " + e.getMessage(), e);
+        }
     }
     
     private PlaylistTrackResponse toResponse(PlaylistTrack playlistTrack) {
-        Track track = playlistTrack.getTrack();
-        String artistName = track.getArtist() != null ? track.getArtist().getName() : null;
-        String albumTitle = track.getAlbum() != null ? track.getAlbum().getTitle() : null;
-        return new PlaylistTrackResponse(
-                track.getId(),
-                track.getTitle(),
-                artistName,
-                playlistTrack.getPosition(),
-                albumTitle,
-                track.getDurationSeconds(),
-                track.getGenre());
+        try {
+            Track track = playlistTrack.getTrack();
+            if (track == null) {
+                throw new RuntimeException("Трек не найден");
+            }
+            String artistName = null;
+            String albumTitle = null;
+            try {
+                if (track.getArtist() != null) {
+                    artistName = track.getArtist().getName();
+                }
+            } catch (Exception e) {
+            }
+            try {
+                if (track.getAlbum() != null) {
+                    albumTitle = track.getAlbum().getTitle();
+                }
+            } catch (Exception e) {
+            }
+            return new PlaylistTrackResponse(
+                    track.getId(),
+                    track.getTitle(),
+                    artistName,
+                    playlistTrack.getPosition(),
+                    albumTitle,
+                    track.getDurationSeconds(),
+                    track.getGenre());
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при преобразовании трека: " + e.getMessage(), e);
+        }
     }
     
     private void persistPositions(List<PlaylistTrack> tracks) {
-        for (int i = 0; i < tracks.size(); i++) {
-            tracks.get(i).setPosition(i);
+        if (tracks.isEmpty()) {
+            return;
+        }
+        try {
+            int offset = 1000000;
+            for (int i = 0; i < tracks.size(); i++) {
+                PlaylistTrack track = tracks.get(i);
+                track.setPosition(offset + i);
+                playlistTrackRepository.save(track);
+            }
+            playlistTrackRepository.flush();
+            
+            for (int i = 0; i < tracks.size(); i++) {
+                PlaylistTrack track = tracks.get(i);
+                track.setPosition(i);
+                playlistTrackRepository.save(track);
+            }
+            playlistTrackRepository.flush();
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при сохранении позиций: " + e.getMessage(), e);
         }
     }
     
     private void normalizePositions(Long playlistId) {
         List<PlaylistTrack> ordered = playlistTrackRepository.findByPlaylistIdOrderByPositionAsc(playlistId);
-        persistPositions(new ArrayList<>(ordered));
+        if (ordered.isEmpty()) {
+            return;
+        }
+        try {
+            int offset = 1000000;
+            for (int i = 0; i < ordered.size(); i++) {
+                PlaylistTrack track = ordered.get(i);
+                track.setPosition(offset + i);
+                playlistTrackRepository.save(track);
+            }
+            playlistTrackRepository.flush();
+            for (int i = 0; i < ordered.size(); i++) {
+                PlaylistTrack track = ordered.get(i);
+                track.setPosition(i);
+                playlistTrackRepository.save(track);
+            }
+            playlistTrackRepository.flush();
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при нормализации позиций: " + e.getMessage(), e);
+        }
     }
 }

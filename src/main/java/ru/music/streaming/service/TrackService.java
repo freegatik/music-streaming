@@ -47,13 +47,23 @@ public class TrackService {
     }
     
     @Transactional
-    public Track updateTrack(Long id, Track trackDetails) {
+    public Track updateTrack(Long id, Track trackDetails, Long artistId, Long albumId) {
         Track track = getTrackById(id);
         
         track.setTitle(trackDetails.getTitle());
         track.setDurationSeconds(trackDetails.getDurationSeconds());
         track.setGenre(trackDetails.getGenre());
         track.setAudioUrl(trackDetails.getAudioUrl());
+        
+        if (artistId != null) {
+            Artist artist = artistService.getArtistById(artistId);
+            track.setArtist(artist);
+        }
+        
+        if (albumId != null) {
+            Album album = albumService.getAlbumById(albumId);
+            track.setAlbum(album);
+        }
         
         return trackRepository.save(track);
     }

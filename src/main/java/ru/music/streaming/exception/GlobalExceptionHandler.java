@@ -1,14 +1,18 @@
 package ru.music.streaming.exception;
 
+import org.hibernate.LazyInitializationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +29,22 @@ public class GlobalExceptionHandler {
                 ex.getMessage()
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+    
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleException(Exception ex) {
+        ex.printStackTrace();
+        String message = ex.getMessage();
+        if (message == null || message.isEmpty()) {
+            message = ex.getClass().getSimpleName() + ": Произошла непредвиденная ошибка";
+        }
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Внутренняя ошибка сервера",
+                message
+        );
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -78,6 +98,29 @@ public class GlobalExceptionHandler {
                 ex.getMessage() != null ? ex.getMessage() : "Невалидный или истекший токен"
         );
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+    
+    @ExceptionHandler({DataIntegrityViolationException.class, ConstraintViolationException.class})
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(Exception ex) {
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Ошибка базы данных",
+                "Нарушение целостности данных: " + (ex.getMessage() != null ? ex.getMessage() : "Дублирование или конфликт данных")
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+    
+    @ExceptionHandler({LazyInitializationException.class, TransactionSystemException.class})
+    public ResponseEntity<ErrorResponse> handleHibernateException(Exception ex) {
+        ex.printStackTrace();
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Ошибка базы данных",
+                "Ошибка при работе с базой данных: " + (ex.getMessage() != null ? ex.getMessage() : "Проблема с загрузкой данных")
+        );
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     
     public static class ErrorResponse {

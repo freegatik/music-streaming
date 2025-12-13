@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import ru.music.streaming.dto.CurrentUserResponse;
 import ru.music.streaming.dto.LoginRequest;
 import ru.music.streaming.dto.RefreshRequest;
 import ru.music.streaming.dto.RegistrationRequest;
@@ -16,6 +17,7 @@ import ru.music.streaming.dto.RegistrationResponse;
 import ru.music.streaming.dto.TokenResponse;
 import ru.music.streaming.model.User;
 import ru.music.streaming.model.UserSession;
+import ru.music.streaming.security.PlaylistOwnershipChecker;
 import ru.music.streaming.security.SecurityUser;
 import ru.music.streaming.service.TokenService;
 import ru.music.streaming.service.UserService;
@@ -27,12 +29,14 @@ public class AuthController {
     private final UserService userService;
     private final TokenService tokenService;
     private final AuthenticationManager authenticationManager;
+    private final PlaylistOwnershipChecker ownershipChecker;
     
     @Autowired
-    public AuthController(UserService userService, TokenService tokenService, AuthenticationManager authenticationManager) {
+    public AuthController(UserService userService, TokenService tokenService, AuthenticationManager authenticationManager, PlaylistOwnershipChecker ownershipChecker) {
         this.userService = userService;
         this.tokenService = tokenService;
         this.authenticationManager = authenticationManager;
+        this.ownershipChecker = ownershipChecker;
     }
     
     @PostMapping("/register")
@@ -72,6 +76,25 @@ public class AuthController {
         UserSession newSession = tokenService.refreshTokens(request.getRefreshToken());
 
         TokenResponse response = new TokenResponse(newSession.getAccessToken(), newSession.getRefreshToken());
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/me")
+    public ResponseEntity<CurrentUserResponse> getCurrentUser() {
+        var currentUser = ownershipChecker.getCurrentUser();
+        if (currentUser == null) {
+            throw new org.springframework.security.access.AccessDeniedException("Пользователь не аутентифицирован");
+        }
+        
+        CurrentUserResponse response = new CurrentUserResponse(
+                currentUser.getId(),
+                currentUser.getUsername(),
+                currentUser.getEmail(),
+                currentUser.getFirstName(),
+                currentUser.getLastName(),
+                currentUser.getRole()
+        );
+        
         return ResponseEntity.ok(response);
     }
 }

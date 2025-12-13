@@ -63,7 +63,6 @@ public class User {
         this.role = role;
     }
     
-    // Геттеры и сеттеры
     public Long getId() {
         return id;
     }

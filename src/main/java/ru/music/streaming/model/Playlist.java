@@ -50,7 +50,6 @@ public class Playlist {
         this.createdAt = LocalDateTime.now();
     }
     
-    // Геттеры и сеттеры
     public Long getId() {
         return id;
     }

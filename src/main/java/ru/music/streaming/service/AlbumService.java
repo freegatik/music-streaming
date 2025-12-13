@@ -38,12 +38,17 @@ public class AlbumService {
     }
     
     @Transactional
-    public Album updateAlbum(Long id, Album albumDetails) {
+    public Album updateAlbum(Long id, Album albumDetails, Long artistId) {
         Album album = getAlbumById(id);
         
         album.setTitle(albumDetails.getTitle());
         album.setReleaseDate(albumDetails.getReleaseDate());
         album.setCoverUrl(albumDetails.getCoverUrl());
+        
+        if (artistId != null) {
+            Artist artist = artistService.getArtistById(artistId);
+            album.setArtist(artist);
+        }
         
         return albumRepository.save(album);
     }
